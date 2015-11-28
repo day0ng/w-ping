@@ -58,6 +58,8 @@ Example:
 Examples
 ==============
 
+These are some examples for different options:
+
 [root@TEST w-ping]#  
 [root@TEST w-ping]# ./w-ping.py --ip 192.168.0.1  
 2015-11-28 15:50:42, 192.168.0.1, 1, 1, 0.00%, 3.178, 3.178, 3.178, n/a  
