@@ -1,5 +1,7 @@
 # w-ping
 
+This is a python pure ping, and it's light and simple.
+
 
 Author
 ==============
