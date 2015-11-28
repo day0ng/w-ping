@@ -38,7 +38,7 @@ def help_and_exit():
     print('''
 Description:
 
-    This is a python pure ping, it was designed for pinging a lot of IP addresses.
+    This is a pure python ping, it was designed for pinging a lot of IP addresses.
 
 Options:
 

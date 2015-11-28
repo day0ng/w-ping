@@ -1,6 +1,7 @@
 # w-ping
 
-This is a python pure ping, and it's light and simple.
+This is a pure python ping, and it's light and simple. The original code of python
+ping is from https://github.com/samuel/python-ping/.
 
 
 Author
@@ -15,7 +16,7 @@ Help
 
 Description:
 
-    This is a python pure ping, it was designed for pinging a lot of IP addresses.
+    This is a pure python ping, it was designed for pinging a lot of IP addresses.
 
 Options:
 
