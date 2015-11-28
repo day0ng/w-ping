@@ -455,30 +455,32 @@ if __name__ == '__main__':
 
         if op == '-h':
             help_and_exit()
-        elif op == '--src':
-            ping_src = value
+        elif op == '--count':
+            if value.isalnum():
+                count = int(value)
+        elif op == '--datadir':
+            datadir = value
+        elif op == '--interval':
+            interval = float(value)
         elif op == '--ip' or op == '--dst_ip':
             ip = value
         elif op == '--ipfile' or op == '--dst_ipfile':
             ipfile = value
-        elif op == '--datadir':
-            datadir = value
-        elif op == '--count':
-            if value.isalnum():
-                count = int(value)
-        elif op == '--interval':
-            interval = float(value)
-        elif op == '--timeout':
-            timeout = float(value)
-        elif op == '--thread':
-            if value.isalnum():
-                thread = int(value)
         elif op == '--shellping':
             shellping = True
         elif op == '--silent':
             silent = True
+        elif op == '--src':
+            ping_src = value
+        elif op == '--thread':
+            if value.isalnum():
+                thread = int(value)
+        elif op == '--timeout':
+            timeout = float(value)
         else:
             help_and_exit()
+    if datadir != '':
+        silent = True
 
     # func_name
     func_name = w_ping
