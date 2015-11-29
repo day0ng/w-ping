@@ -82,6 +82,7 @@ Example:
 
 
 def w_time(time_format = '%Y-%m-%d %H:%M:%S'):
+
     return time.strftime(time_format, time.localtime(time.time()))
 
 
