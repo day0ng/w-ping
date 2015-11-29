@@ -81,8 +81,8 @@ Example:
     sys.exit()
 
 
-def w_now():
-    return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+def w_time(time_format = '%Y-%m-%d %H:%M:%S'):
+    return time.strftime(time_format, time.localtime(time.time()))
 
 
 def sys_cmd(str_cmd):
@@ -399,7 +399,7 @@ def w_ping(ping_src, dst_ip, ping_count, ping_interval, ping_timeout, datadir, s
             cmd_mkdir = 'mkdir -p %s' % (output_path)
             sys_cmd(cmd_mkdir)
         except:
-            print('[%s] Error: mkdir %s failed!' % (w_now(), output_path))
+            print('[%s] Error: mkdir %s failed!' % (w_time(), output_path))
             return False
  
     try:
@@ -407,7 +407,7 @@ def w_ping(ping_src, dst_ip, ping_count, ping_interval, ping_timeout, datadir, s
         f_out.write("%s\n" % (cmd_out))
         f_out.close()
     except:
-        print('[%s] Error: file %s is failed to write.' % (w_now(), output_file))
+        print('[%s] Error: file %s is failed to write.' % (w_time(), output_file))
         return False
 
     return True
