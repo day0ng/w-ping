@@ -314,26 +314,15 @@ rtt min/avg/max/mdev = %0.3f/%0.3f/%0.3f/0.000 ms
 #/////////////////////// python ping - end ///////////////////////
 
 
-def w_ping(ping_src, dst_ip, ping_count, ping_interval, ping_timeout, datadir, silent, shell_ping):
-
-    # ping_src
-    if not isinstance(ping_src, str) or ping_src == None or ping_src.strip() == '':
-        ping_src = 'src'
+def w_ping(dst_ip, ping_count=1, ping_interval=0.01, ping_timeout=1, datadir=".", silent=False, shell_ping=False, ping_src="n/a"):
 
     # dst_ip
-    if not isinstance(dst_ip, str) or dst_ip == None or dst_ip.strip() == '':
-        return False
     if re.search("^([0-9]{1,3}\.){3}[0-9]{1,3}$", dst_ip) == None:
         return False
 
     # ping_count
-    if not isinstance(ping_count, int) or ping_count == None \
-       or ping_count < 0 or ping_count > 1000:
+    if ping_count < 0 or ping_count > 1000:
         ping_count = 1
-
-    # datadir
-    if not isinstance(datadir, str) or datadir == None or datadir.strip() == '':
-        datadir = '.'
 
     # do ping
     cmd_out = w_verbose_ping(dst_ip, ping_count, ping_interval, ping_timeout, shell_ping)
@@ -392,8 +381,7 @@ Example:
     p.add_argument("--src",       type=str,   default="n/a", help="Source name of ping, is hostname mostly, default is n/a.")
     p.add_argument("--ip",        type=str,   help="Destination IP list to ping.")
     p.add_argument("--ipfile",    type=str,   help="Destination IP list file to ping.")
-    p.add_argument("--datadir",   type=str,   help='''Where the ping result to be stored, default is current directory. 
-If given then --silent will be enabled.
+    p.add_argument("--datadir",   type=str,   default=".",   help='''Where the ping result to be stored, default is current directory. 
 Example:
 /var/log/w-ping/$(date "+%%Y")/$(date "+%%Y%%m%%d")/
 ''')
@@ -403,12 +391,9 @@ Example:
     p.add_argument("--timeout",   type=int,   default=1,     help="Time to wait for ping executing, default is 1 seconds.")
     p.add_argument("--thread",    type=int,   default=1000,  help="The maximum threads could be spread each time, default is 1000.")
     p.add_argument("--shellping", action="store_true", help="Use traditional shell ping output instead of csv output.")
-    p.add_argument("--silent",    action="store_true", help="Silence mode, will be eanbled while --datadir was given.")
+    p.add_argument("--silent",    action="store_true", help="Silence mode.")
 
     args = p.parse_args()
-
-    if args.datadir:
-        args.silent = True
 
     # func_name
     func_name = w_ping
@@ -422,24 +407,24 @@ Example:
         list_ip = args.ip.split(',')
     elif args.ipfile:
         if not os.path.exists(args.ipfile):
-            print('%s does not exist, please specified host with --ip or --ipfile.\n' % (args.ipfile))
+            print('%s does not exist, use -h to get more help.\n' % (args.ipfile))
             sys.exit()
         f_ip = open(args.ipfile)
         list_ip = f_ip.readlines()
         f_ip.close()
     else:
-        print('Please specified host with --ip or --ipfile.\n')
         p.print_help()
-        #sys.exit()
+        sys.exit()
 
     # Prepare threading
     for dst_ip in list_ip:
-        func_args.append([args.src, dst_ip.strip(), args.count, args.interval, args.timeout, args.datadir, args.silent, args.shellping])
+        func_args.append([dst_ip.strip(), args.count, args.interval, args.timeout, args.datadir, args.silent, args.shellping, args.src])
 
     # Start multi-threading
     try:
-        w_threading(func_name, func_args, thread)
+        w_threading(func_name, func_args, args.thread)
     except:
+        print("Fail to run w_threading().")
         pass
 
     # End
