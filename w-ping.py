@@ -13,8 +13,12 @@
 
     Revision history
     ~~~~~~~~~~~~~~~~
+    2016/01/18
+    Dayong Wang (wandering_997@sina.com)
+    Replace getopt with argparse.
+
     2015/11/06
-    creates by Dayong Wang (wandering_997@sina.com)
+    Creates by Dayong Wang (wandering_997@sina.com)
 
     Last commit info:
     ~~~~~~~~~~~~~~~~~
@@ -23,62 +27,12 @@
     $Author: $
 """
 
-import getopt
+import argparse
 import re
 import subprocess
 import threading
 
 import os, sys, socket, struct, select, time
-
-
-def help_and_exit():
-
-    app_name = re.sub('.*/', '', __file__)
-
-    print('''
-Description:
-
-    This is a pure python ping, it was designed for pinging a lot of IP addresses.
-
-Options:
-
-    --count <num>           Same to -c of ping, accepts 0 to 1000, default is 1.
-
-    --datadir <path>        The path to place output files, default is current directory.
-                            if given then --silent will be enabled.
-                            Example:
-                            /var/log/w-ping/$(date "+%%Y")/$(date "+%%Y%%m%%d")/
-
-    --interval              Same to -i of ping, accepts 0 to 60, default is 0.01.
-
-    --ip <ip1,ip2,...>      IP list to ping destination.
-
-    --ipfile <file_name>    File of IP list, --ip has higher priority than --ipfile.
-
-    --shellping             Use traditional shell ping output instead of csv output.
-
-    --silent                Silence mode, will be eanbled while --datadir was given.
-
-    --src <string>          Source name of ping, is hostname mostly, default is n/a.
-
-    --timeout <seconds>     Time to wait for ping executing, default is 1 seconds.
-
-    --thread <num>          The maximum threads could be spread each time, default is 1000.
-
-
-Log format:
-
-    yyyy-mm-dd HH:MM:SS, ip, pkt_sent, pkt_recv, loss, rtt_min, rtt_avg, rtt_max, src
-
-
-Example:
-
-    %s --ip 192.168.0.1
-    %s --ipfile ./ip.test --datadir /tmp/test --interval 0 --timeout 0.1
-
-''' % (app_name, app_name))
-
-    sys.exit()
 
 
 def w_time(time_format = '%Y-%m-%d %H:%M:%S'):
@@ -417,71 +371,44 @@ def w_ping(ping_src, dst_ip, ping_count, ping_interval, ping_timeout, datadir, s
 
 if __name__ == '__main__':
 
-    ping_src = 'n/a'
-    ip = ''
-    ipfile = ''
-    datadir = ''
-    count = 1
-    interval = 0.01
-    timeout = 1
-    thread = 1000
-    shellping = False
-    silent = False
-    file_list = list()
+    p = argparse.ArgumentParser(
+            formatter_class=argparse.RawTextHelpFormatter,
+            description="  This is a pure python ping, it was designed for pinging a lot of IP addresses.",
+            epilog='''
 
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "h", 
-                        [   'src=',
-                            'ip=',
-                            'ipfile=',
-                            'dst_ip=',
-                            'dst_ipfile=',
-                            'datadir=',
-                            'count=',
-                            'interval=',
-                            'timeout=',
-                            'thread=',
-                            'shellping',
-                            'silent',
-                        ])
-    except:
-        print("Wrong options!")
-        print("Try '-h' to get more information.")
-        sys.exit()
+Log format:
 
-    if len(opts) == 0:
-        help_and_exit()
+    yyyy-mm-dd HH:MM:SS, ip, pkt_sent, pkt_recv, loss, rtt_min, rtt_avg, rtt_max, src
 
-    for op, value in opts:
 
-        if op == '-h':
-            help_and_exit()
-        elif op == '--count':
-            if value.isalnum():
-                count = int(value)
-        elif op == '--datadir':
-            datadir = value
-        elif op == '--interval':
-            interval = float(value)
-        elif op == '--ip' or op == '--dst_ip':
-            ip = value
-        elif op == '--ipfile' or op == '--dst_ipfile':
-            ipfile = value
-        elif op == '--shellping':
-            shellping = True
-        elif op == '--silent':
-            silent = True
-        elif op == '--src':
-            ping_src = value
-        elif op == '--thread':
-            if value.isalnum():
-                thread = int(value)
-        elif op == '--timeout':
-            timeout = float(value)
-        else:
-            help_and_exit()
-    if datadir != '':
-        silent = True
+Example:
+
+    %s --ip 192.168.0.1
+    %s --ipfile ./ip.test --datadir /tmp/test --interval 0 --timeout 0.1
+
+                   ''' % (sys.argv[0], sys.argv[0])
+        )
+
+    p.add_argument("--src",       type=str,   default="n/a", help="Source name of ping, is hostname mostly, default is n/a.")
+    p.add_argument("--ip",        type=str,   help="Destination IP list to ping.")
+    p.add_argument("--ipfile",    type=str,   help="Destination IP list file to ping.")
+    p.add_argument("--datadir",   type=str,   help='''Where the ping result to be stored, default is current directory. 
+If given then --silent will be enabled.
+Example:
+/var/log/w-ping/$(date "+%%Y")/$(date "+%%Y%%m%%d")/
+''')
+
+    p.add_argument("--count",     type=int,   default=1,     help="Same to -c of ping, accepts 0 to 1000, default is 1.")
+    p.add_argument("--interval",  type=float, default=0.01,  help="Same to -i of ping, accepts 0 to 60, default is 0.01.")
+    p.add_argument("--timeout",   type=int,   default=1,     help="Time to wait for ping executing, default is 1 seconds.")
+    p.add_argument("--thread",    type=int,   default=1000,  help="The maximum threads could be spread each time, default is 1000.")
+    p.add_argument("--shellping", action="store_true", help="Use traditional shell ping output instead of csv output.")
+    p.add_argument("--silent",    action="store_true", help="Silence mode, will be eanbled while --datadir was given.")
+
+    args = p.parse_args()
+
+    if args.datadir:
+        args.silent = True
 
     # func_name
     func_name = w_ping
@@ -490,22 +417,24 @@ if __name__ == '__main__':
     func_args = list()
 
     # ip
-    if ip != '':
-        list_ip = ip.split(',')
-    elif ipfile != '':
-        if not os.path.exists(ipfile):
-            print('%s does not exist, please specified host with --ip or --ipfile.\n' % (ipfile))
-            help_and_exit()
-        f_ip = open(ipfile)
+    list_ip = list()
+    if args.ip:
+        list_ip = args.ip.split(',')
+    elif args.ipfile:
+        if not os.path.exists(args.ipfile):
+            print('%s does not exist, please specified host with --ip or --ipfile.\n' % (args.ipfile))
+            sys.exit()
+        f_ip = open(args.ipfile)
         list_ip = f_ip.readlines()
         f_ip.close()
     else:
         print('Please specified host with --ip or --ipfile.\n')
-        help_and_exit()
+        p.print_help()
+        #sys.exit()
 
     # Prepare threading
     for dst_ip in list_ip:
-        func_args.append([ping_src, dst_ip.strip(), count, interval, timeout, datadir, silent, shellping])
+        func_args.append([args.src, dst_ip.strip(), args.count, args.interval, args.timeout, args.datadir, args.silent, args.shellping])
 
     # Start multi-threading
     try:
