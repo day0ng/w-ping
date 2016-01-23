@@ -12,42 +12,42 @@ Wang Dayong (Email: wandering_997@sina.com, http://weibo.com/wandering997)
 Help
 ==============
 
-[root@TEST w-ping]# ./w-ping.py
+    [root@TEST w-ping]# ./w-ping.py
 
-usage: w-ping.py [-h] [--src SRC] [--ip IP] [--ipfile IPFILE]
-                 [--datadir DATADIR] [--count COUNT] [--interval INTERVAL]
-                 [--timeout TIMEOUT] [--max MAX] [--shellping] [--silent]
-                 [--process]
-
-  This is a pure python ping, it was designed for pinging a lot of IP addresses.
-
-optional arguments:
-  -h, --help           show this help message and exit
-  --src SRC            Source name of ping, is hostname mostly, default is n/a.
-  --ip IP              Destination IP list to ping.
-  --ipfile IPFILE      Destination IP list file to ping.
-  --datadir DATADIR    Where the ping result to be stored, default is current directory.
-                       Example:
-                       /var/log/w-ping/$(date "+%Y")/$(date "+%Y%m%d")/
-  --count COUNT        Same to -c of ping, accepts 0 to 1000, default is 1.
-  --interval INTERVAL  Same to -i of ping, accepts 0 to 60, default is 0.01.
-  --timeout TIMEOUT    Time to wait for ping executing, default is 1 seconds.
-  --max MAX            The maximum threads/processes could be spread each time, default is 1000.
-  --shellping          Use traditional shell ping output instead of csv output.
-  --silent             Silence mode.
-  --process            Use multi-process instead of multi-thread.
-
-Log format:
-
-    yyyy-mm-dd HH:MM:SS, ip, pkt_sent, pkt_recv, loss, rtt_min, rtt_avg, rtt_max, src
-
-Example:
-
-    w-ping/w-ping.py --ip 192.168.0.1
-    w-ping/w-ping.py --ipfile ./ip.test --datadir /tmp/test --interval 0 --timeout 0.1
-
-
-[root@TEST w-ping]#
+    usage: w-ping.py [-h] [--src SRC] [--ip IP] [--ipfile IPFILE]
+                     [--datadir DATADIR] [--count COUNT] [--interval INTERVAL]
+                     [--timeout TIMEOUT] [--max MAX] [--shellping] [--silent]
+                     [--process]
+    
+      This is a pure python ping, it was designed for pinging a lot of IP addresses.
+    
+    optional arguments:
+      -h, --help           show this help message and exit
+      --src SRC            Source name of ping, is hostname mostly, default is n/a.
+      --ip IP              Destination IP list to ping.
+      --ipfile IPFILE      Destination IP list file to ping.
+      --datadir DATADIR    Where the ping result to be stored, default is current directory.
+                           Example:
+                           /var/log/w-ping/$(date "+%Y")/$(date "+%Y%m%d")/
+      --count COUNT        Same to -c of ping, accepts 0 to 1000, default is 1.
+      --interval INTERVAL  Same to -i of ping, accepts 0 to 60, default is 0.01.
+      --timeout TIMEOUT    Time to wait for ping executing, default is 1 seconds.
+      --max MAX            The maximum threads/processes could be spread each time, default is 1000.
+      --shellping          Use traditional shell ping output instead of csv output.
+      --silent             Silence mode.
+      --process            Use multi-process instead of multi-thread.
+    
+    Log format:
+    
+        yyyy-mm-dd HH:MM:SS, ip, pkt_sent, pkt_recv, loss, rtt_min, rtt_avg, rtt_max, src
+    
+    Example:
+    
+        w-ping/w-ping.py --ip 192.168.0.1
+        w-ping/w-ping.py --ipfile ./ip.test --datadir /tmp/test --interval 0 --timeout 0.1
+    
+    
+    [root@TEST w-ping]#
 
 
 Examples
