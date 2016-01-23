@@ -43,8 +43,8 @@ Help
     
     Example:
     
-        w-ping/w-ping.py --ip 192.168.0.1
-        w-ping/w-ping.py --ipfile ./ip.test --datadir /tmp/test --interval 0 --timeout 0.1
+        w-ping.py --ip 192.168.0.1
+        w-ping.py --ipfile ./ip.test --datadir /tmp/test --interval 0 --timeout 0.1
     
     
     [root@TEST w-ping]#
