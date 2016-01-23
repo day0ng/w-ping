@@ -13,6 +13,10 @@
 
     Revision history
     ~~~~~~~~~~~~~~~~
+    2016/01/23
+    Dayong Wang (wandering_997@sina.com)
+    Add multiprocessing function which can be enabled by option --process.
+
     2016/01/18
     Dayong Wang (wandering_997@sina.com)
     Replace getopt with argparse.
@@ -28,6 +32,7 @@
 """
 
 import argparse
+import multiprocessing
 import re
 import subprocess
 import threading
@@ -47,6 +52,58 @@ def sys_cmd(str_cmd):
     str_err = sp.stderr.read()
     sp.wait()
     return [str_out, str_err]
+
+
+def w_multiprocessing(func_name, func_args, max_process):
+
+    # multi processing
+    if func_name == None or func_name == '':
+        print('w_multiprocessing() error: func_name is empty.\n')
+        return False
+    if func_args == None or not isinstance(func_args, list):
+        print('w_multiprocessing() error: func_args is wrong.\n')
+        return False
+    if not isinstance(max_process, int) or max_process == None or max_process == '':
+        max_process = 1000
+
+    # create process pool
+    process_pool = list()
+    for i in range(0, len(func_args)):
+        p = multiprocessing.Process(target=func_name, args=func_args[i])
+        process_pool.append(p)
+
+    # execute processs for max_process number of processs each time
+    process_count = len(process_pool)
+    if process_count > max_process:
+        i_begin = 0
+        i_end = 0
+        round_num = process_count / max_process
+        if process_count % max_process > 0:
+            round_num += 1
+        # max_process: How many processs (test) could be executed at one time
+        for j in range(0, round_num):
+            i_begin = j * max_process
+            if j == round_num - 1:                 # the last round
+                i_end = process_count
+            else:
+                i_end = i_begin + max_process
+            # start processs
+            for i in range(i_begin, i_end):
+                process_pool[i].start()
+            # terminate processs
+            for i in range(i_begin, i_end):
+                process_pool[i].join()
+    # === process_count <= max_process ===
+    else:
+        # start processs
+        for i in range(0, process_count):
+            process_pool[i].start()
+        # terminate processs
+        for i in range(0, process_count):
+            process_pool[i].join()
+    # ========== Run processs - End ==========
+
+#___ End of w_multiprocessing() ____
 
 
 def w_threading(func_name, func_args, max_thread):
@@ -392,6 +449,7 @@ Example:
     p.add_argument("--thread",    type=int,   default=1000,  help="The maximum threads could be spread each time, default is 1000.")
     p.add_argument("--shellping", action="store_true", help="Use traditional shell ping output instead of csv output.")
     p.add_argument("--silent",    action="store_true", help="Silence mode.")
+    p.add_argument("--process",   action="store_true", help="Use multi-process instead of multi-thread.")
 
     args = p.parse_args()
 
@@ -419,13 +477,21 @@ Example:
     # Prepare threading
     for dst_ip in list_ip:
         func_args.append([dst_ip.strip(), args.count, args.interval, args.timeout, args.datadir, args.silent, args.shellping, args.src])
-
-    # Start multi-threading
-    try:
-        w_threading(func_name, func_args, args.thread)
-    except:
-        print("Fail to run w_threading().")
-        pass
+  
+    if args.process:
+        # Start multi-processing
+        try:
+            w_multiprocessing(func_name, func_args, args.thread)
+        except:
+            print("Fail to run w_multiprocessing().")
+            pass
+    else:
+        # Start multi-threading
+        try:
+            w_threading(func_name, func_args, args.thread)
+        except:
+            print("Fail to run w_threading().")
+            pass
 
     # End
     sys.exit()
