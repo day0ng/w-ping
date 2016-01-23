@@ -446,7 +446,7 @@ Example:
     p.add_argument("--count",     type=int,   default=1,     help="Same to -c of ping, accepts 0 to 1000, default is 1.")
     p.add_argument("--interval",  type=float, default=0.01,  help="Same to -i of ping, accepts 0 to 60, default is 0.01.")
     p.add_argument("--timeout",   type=int,   default=1,     help="Time to wait for ping executing, default is 1 seconds.")
-    p.add_argument("--thread",    type=int,   default=1000,  help="The maximum threads could be spread each time, default is 1000.")
+    p.add_argument("--max",       type=int,   default=1000,  help="The maximum threads/processes could be spread each time, default is 1000.")
     p.add_argument("--shellping", action="store_true", help="Use traditional shell ping output instead of csv output.")
     p.add_argument("--silent",    action="store_true", help="Silence mode.")
     p.add_argument("--process",   action="store_true", help="Use multi-process instead of multi-thread.")
@@ -481,14 +481,14 @@ Example:
     if args.process:
         # Start multi-processing
         try:
-            w_multiprocessing(func_name, func_args, args.thread)
+            w_multiprocessing(func_name, func_args, args.max)
         except:
             print("Fail to run w_multiprocessing().")
             pass
     else:
         # Start multi-threading
         try:
-            w_threading(func_name, func_args, args.thread)
+            w_threading(func_name, func_args, args.max)
         except:
             print("Fail to run w_threading().")
             pass
