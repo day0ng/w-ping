@@ -13,12 +13,20 @@
 
     Revision history
     ~~~~~~~~~~~~~~~~
+    2016/09/13
+    Dayong Wang
+    Fix Exception KeyError by moving monkey.patch_all() on the top of import.
+
+    2016/02/20
+    Dayong Wang
+    Use gevent.
+
     2016/01/23
-    Dayong Wang (wandering_997@sina.com)
+    Dayong Wang
     Add multiprocessing function which can be enabled by option --process.
 
     2016/01/18
-    Dayong Wang (wandering_997@sina.com)
+    Dayong Wang
     Replace getopt with argparse.
 
     2015/11/06
@@ -31,18 +39,22 @@
     $Author: $
 """
 
+import gevent
+from gevent import monkey
+monkey.patch_all()
+
 import argparse
-import multiprocessing
+import logging
+import os
 import re
-import subprocess
-import threading
-
-import os, sys, socket, struct, select, time
-
-
-def w_time(time_format = '%Y-%m-%d %H:%M:%S'):
-
-    return time.strftime(time_format, time.localtime(time.time()))
+import select
+import socket
+import struct
+import sys
+import time
+from gevent import subprocess
+from gevent.queue import Queue, Empty
+tasks = Queue(maxsize=10000)
 
 
 def sys_cmd(str_cmd):
@@ -52,113 +64,6 @@ def sys_cmd(str_cmd):
     str_err = sp.stderr.read()
     sp.wait()
     return [str_out, str_err]
-
-
-def w_multiprocessing(func_name, func_args, max_process):
-
-    # multi processing
-    if func_name == None or func_name == '':
-        print('w_multiprocessing() error: func_name is empty.\n')
-        return False
-    if func_args == None or not isinstance(func_args, list):
-        print('w_multiprocessing() error: func_args is wrong.\n')
-        return False
-    if not isinstance(max_process, int) or max_process == None or max_process == '':
-        max_process = 1000
-
-    # create process pool
-    process_pool = list()
-    for i in range(0, len(func_args)):
-        p = multiprocessing.Process(target=func_name, args=func_args[i])
-        process_pool.append(p)
-
-    # execute processs for max_process number of processs each time
-    process_count = len(process_pool)
-    if process_count > max_process:
-        i_begin = 0
-        i_end = 0
-        round_num = process_count / max_process
-        if process_count % max_process > 0:
-            round_num += 1
-        # max_process: How many processs (test) could be executed at one time
-        for j in range(0, round_num):
-            i_begin = j * max_process
-            if j == round_num - 1:                 # the last round
-                i_end = process_count
-            else:
-                i_end = i_begin + max_process
-            # start processs
-            for i in range(i_begin, i_end):
-                process_pool[i].start()
-            # terminate processs
-            for i in range(i_begin, i_end):
-                process_pool[i].join()
-    # === process_count <= max_process ===
-    else:
-        # start processs
-        for i in range(0, process_count):
-            process_pool[i].start()
-        # terminate processs
-        for i in range(0, process_count):
-            process_pool[i].join()
-    # ========== Run processs - End ==========
-
-#___ End of w_multiprocessing() ____
-
-
-def w_threading(func_name, func_args, max_thread):
-
-    # multi threading
-    if func_name == None or func_name == '':
-        print('w_threading() error: func_name is empty.\n')
-        return False
-    if func_args == None or not isinstance(func_args, list):
-        print('w_threading() error: func_args is wrong.\n')
-        return False
-    if not isinstance(max_thread, int) or max_thread == None or max_thread == '':
-        max_thread = 1000
-
-    # create thread pool
-    thread_pool = list()
-    for i in range(0, len(func_args)):
-        th = threading.Thread(target=func_name, args=func_args[i])
-        thread_pool.append(th)
-
-    # execute threads for max_thread number of threads each time
-    thread_count = len(thread_pool)
-    if thread_count > max_thread:
-        i_begin = 0
-        i_end = 0
-        round_num = thread_count / max_thread
-        if thread_count % max_thread > 0:
-            round_num += 1
-        # max_thread: How many threads (test) could be executed at one time
-        for j in range(0, round_num):
-            i_begin = j * max_thread
-            if j == round_num - 1:                 # the last round
-                i_end = thread_count
-            else:
-                i_end = i_begin + max_thread
-            # start threads
-            for i in range(i_begin, i_end):
-                thread_pool[i].start()
-            # terminate threads
-            for i in range(i_begin, i_end):
-                thread_pool[i].join()
-    # === thread_count <= max_thread ===
-    else:
-        # start threads
-        for i in range(0, thread_count):
-            thread_pool[i].start()
-        # terminate threads
-        for i in range(0, thread_count):
-            thread_pool[i].join()
-    # ========== Run threads - End ==========
-
-#___ End of w_threading() ____
-
-
-#/////////////////////// python ping - start ///////////////////////
 
 
 # From /usr/include/linux/icmp.h; your milage may vary.
@@ -299,19 +204,19 @@ def verbose_ping(dest_addr, timeout = 2, count = 4):
     the result.
     """
     for i in xrange(count):
-        print "ping %s..." % dest_addr,
+        logging.info("ping %s..." % (dest_addr))
         try:
             delay  =  do_one(dest_addr, timeout)
         except socket.gaierror, e:
-            print "failed. (socket error: '%s')" % e[1]
+            logging.error("failed. (socket error: '%s')" % (e[1]))
             break
 
         if delay  ==  None:
-            print "failed. (timeout within %ssec.)" % timeout
+            logging.error("failed. (timeout within %ssec.)" % (timeout))
         else:
             delay  =  delay * 1000
-            print "get ping in %0.4fms" % delay
-    print
+            logging.info("get ping in %0.4fms" % (delay))
+    logging.info('')
 
 
 def w_verbose_ping(dest_addr, count = 1, interval = 0.01, timeout = 1, shell_ping = False, silence = False):
@@ -329,9 +234,9 @@ def w_verbose_ping(dest_addr, count = 1, interval = 0.01, timeout = 1, shell_pin
         try:
             delay = do_one(dest_addr, timeout, icmp)
         except socket.gaierror, e:
-            print("%s failed (socket error: '%s')" % (msg_header, e[1]))
+            logging.error("%s failed (socket error: '%s')" % (msg_header, e[1]))
             return ''
-        if delay  ==  None:
+        if delay == None:
             pkt_loss = pkt_loss + 1
             if not silence:
                 cmd_out = "%s%s failed (timeout within %s sec)\n" % (cmd_out, msg_header, timeout)
@@ -368,9 +273,6 @@ rtt min/avg/max/mdev = %0.3f/%0.3f/%0.3f/0.000 ms
         return ''
 
 
-#/////////////////////// python ping - end ///////////////////////
-
-
 def w_ping(dst_ip, ping_count=1, ping_interval=0.01, ping_timeout=1, datadir=".", silent=False, shell_ping=False, ping_src="n/a"):
 
     # dst_ip
@@ -390,7 +292,7 @@ def w_ping(dst_ip, ping_count=1, ping_interval=0.01, ping_timeout=1, datadir="."
         cmd_out = "%s, %s" % (cmd_out, ping_src)
 
     if not silent:
-        print(cmd_out)
+        logging.info(cmd_out)
 
     # write to file
     output_file  = "%s/%s" % (datadir, dst_ip)
@@ -400,7 +302,7 @@ def w_ping(dst_ip, ping_count=1, ping_interval=0.01, ping_timeout=1, datadir="."
             cmd_mkdir = 'mkdir -p %s' % (output_path)
             sys_cmd(cmd_mkdir)
         except:
-            print('[%s] Error: mkdir %s failed!' % (w_time(), output_path))
+            logging.error('mkdir %s failed!' % (output_path))
             return False
  
     try:
@@ -408,10 +310,30 @@ def w_ping(dst_ip, ping_count=1, ping_interval=0.01, ping_timeout=1, datadir="."
         f_out.write("%s\n" % (cmd_out))
         f_out.close()
     except:
-        print('[%s] Error: file %s is failed to write.' % (w_time(), output_file))
+        logging.error('file %s is failed to write.' % (output_file))
         return False
 
     return True
+
+
+
+def worker(ping_count, ping_interval, ping_timeout, datadir, silent, shell_ping, ping_src):
+    try:
+        while True:
+            ip = tasks.get(timeout=1)
+            w_ping(ip, ping_count, ping_interval, ping_timeout, datadir, silent, shell_ping, ping_src)
+            gevent.sleep(0)
+    except Empty:
+        logging.debug("Queue is empty!")
+        pass
+
+
+
+def boss(ip_list):
+    ip_len = len(ip_list)
+    for i in xrange(0, ip_len):
+        tasks.put(ip_list[i].strip())
+    logging.debug("Assigned all task.")
 
 
 
@@ -436,64 +358,53 @@ Example:
         )
 
     p.add_argument("--src",       type=str,   default="n/a", help="Source name of ping, is hostname mostly, default is n/a.")
-    p.add_argument("--ip",        type=str,   help="Destination IP list to ping.")
-    p.add_argument("--ipfile",    type=str,   help="Destination IP list file to ping.")
+    p.add_argument("--ip",        type=str,                  help="Destination IP list to ping.")
+    p.add_argument("--ipfile",    type=str,                  help="Destination IP list file to ping.")
     p.add_argument("--datadir",   type=str,   default=".",   help='''Where the ping result to be stored, default is current directory. 
 Example:
 /var/log/w-ping/$(date "+%%Y")/$(date "+%%Y%%m%%d")/
 ''')
-
     p.add_argument("--count",     type=int,   default=1,     help="Same to -c of ping, accepts 0 to 1000, default is 1.")
     p.add_argument("--interval",  type=float, default=0.01,  help="Same to -i of ping, accepts 0 to 60, default is 0.01.")
-    p.add_argument("--timeout",   type=int,   default=1,     help="Time to wait for ping executing, default is 1 seconds.")
-    p.add_argument("--max",       type=int,   default=1000,  help="The maximum threads/processes could be spread each time, default is 1000.")
-    p.add_argument("--shellping", action="store_true", help="Use traditional shell ping output instead of csv output.")
-    p.add_argument("--silent",    action="store_true", help="Silence mode.")
-    p.add_argument("--process",   action="store_true", help="Use multi-process instead of multi-thread.")
-
+    p.add_argument("--shellping", action="store_true",       help="Use traditional shell ping output instead of csv output.")
+    p.add_argument("--silent",    action="store_true",       help="Silence mode.")
+    p.add_argument("--max",       type=int, default=1000,    help="The maximum threads/processes could be spread each time, default is 1000")
+    p.add_argument("--timeout",   type=int, default=60,      help="Timeout of each thread, default is 60s")
+    p.add_argument("--log",       type=str, default="",      help="Log file, default is not set, then log to stdout")
+    p.add_argument("--loglevel",  type=int, default=20,      help="Log level, could be 50(critical), 40(error), 30(warning), 20(info) and 10(debug), default is 20")
     args = p.parse_args()
 
-    # func_name
-    func_name = w_ping
+    logging.basicConfig(level=args.loglevel,
+        format='%(asctime)s [%(levelname)s] [%(filename)s, line:%(lineno)d] %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
+        filename=args.log,
+        filemode='w')
 
-    # func_args
-    func_args = list()
-
-    # ip
-    list_ip = list()
+    ip_list = list()
     if args.ip:
-        list_ip = args.ip.split(',')
+        if not re.match("[0-9,.]+", args.ip):
+            logging.warning("%s is not valid ip address." % (args.ip))
+            sys.exit()
+        ip_list = args.ip.split(',')
     elif args.ipfile:
         if not os.path.exists(args.ipfile):
-            print('%s does not exist, use -h to get more help.\n' % (args.ipfile))
+            logging.warning('%s does not exist, please specified host with --ip or --ipfile.\n' % (args.ipfile))
             sys.exit()
         f_ip = open(args.ipfile)
-        list_ip = f_ip.readlines()
+        ip_list = f_ip.readlines()
         f_ip.close()
     else:
         p.print_help()
         sys.exit()
 
-    # Prepare threading
-    for dst_ip in list_ip:
-        func_args.append([dst_ip.strip(), args.count, args.interval, args.timeout, args.datadir, args.silent, args.shellping, args.src])
-  
-    if args.process:
-        # Start multi-processing
-        try:
-            w_multiprocessing(func_name, func_args, args.max)
-        except:
-            print("Fail to run w_multiprocessing().")
-            pass
-    else:
-        # Start multi-threading
-        try:
-            w_threading(func_name, func_args, args.max)
-        except:
-            print("Fail to run w_threading().")
-            pass
+    # gevent
+    list_gevent = list()
+    list_gevent.append(gevent.spawn(boss, ip_list))
+    for i in xrange(0, args.max):
+        list_gevent.append(gevent.spawn(worker, args.count, args.interval, args.timeout, args.datadir, args.silent, args.shellping, args.src))
+    gevent.joinall(list_gevent, timeout=args.timeout)
 
-    # End
+    # exit
     sys.exit()
 
 
