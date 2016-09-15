@@ -15,8 +15,7 @@
     ~~~~~~~~~~~~~~~~
     2016/09/15
     Dayong Wang
-    Add Linux ping as default detector instead of python raw-ping, 
-    and python raw-ping could be enabled with --rawping option.
+    Add Linux ping as default detector instead of pure-python-ping. 
 
     2016/09/13
     Dayong Wang
@@ -60,6 +59,7 @@ import sys
 import time
 from gevent import subprocess
 from gevent.queue import Queue, Empty
+
 tasks = Queue(maxsize=10000)
 
 
@@ -178,7 +178,6 @@ def send_one_ping(my_socket, dest_addr, ID):
 
 # 2015/11/07  Dayong Wang added one line below
 icmp = socket.getprotobyname("icmp")
-
 def do_one(dest_addr, timeout, icmp = 1):
     """
     Returns either the delay (in seconds) or none on timeout.
@@ -325,13 +324,13 @@ def w_shell_ping(dest_addr, count=1, interval=0.2, timeout=1, shell_output=False
            (now, dest_addr, pkt_all, pkt_rcv, pkt_loss, rtt_min, rtt_avg, rtt_max)
 
 
-def w_ping(dst_ip, ping_count=1, ping_interval=0.2, ping_timeout=1, ping_bind='', datadir=".", silence=False, shell_output=False, rawping=False):
+def w_ping(dst_ip, ping_count=1, ping_interval=0.2, ping_timeout=1, ping_bind='', datadir=".", silence=False, shell_output=False, pythonping=False):
 
     # dst_ip
     if re.search("^([0-9]{1,3}\.){3}[0-9]{1,3}$", dst_ip) == None:
         return False
     # do ping
-    if not rawping:
+    if not pythonping:
         cmd_out =   w_shell_ping(dst_ip, ping_count, ping_interval, ping_timeout, shell_output, silence, ping_bind)
     else:
         cmd_out = w_verbose_ping(dst_ip, ping_count, ping_interval, ping_timeout, shell_output, silence)
@@ -362,17 +361,6 @@ def w_ping(dst_ip, ping_count=1, ping_interval=0.2, ping_timeout=1, ping_bind=''
     return True
 
 
-def worker(ping_count, ping_interval, ping_timeout, ping_bind, datadir, silence, shell_output, rawping):
-    try:
-        while True:
-            ip = tasks.get(timeout=1)
-            w_ping(ip, ping_count, ping_interval, ping_timeout, ping_bind, datadir, silence, shell_output, rawping)
-            gevent.sleep(0)
-    except Empty:
-        logging.debug("Queue is empty!")
-        pass
-
-
 def boss(ip_list):
     ip_len = len(ip_list)
     for i in xrange(0, ip_len):
@@ -380,25 +368,38 @@ def boss(ip_list):
     logging.debug("Assigned all task.")
 
 
+def worker(ping_count, ping_interval, ping_timeout, ping_bind, datadir, silence, shell_output, pythonping):
+    try:
+        while True:
+            ip = tasks.get(timeout=0.001)   # timeout and queue size effects the total execution time
+            w_ping(ip, ping_count, ping_interval, ping_timeout, ping_bind, datadir, silence, shell_output, pythonping)
+            gevent.sleep(0)
+    except Empty:
+        logging.debug("Queue is empty!")
+        pass
+
+
 
 if __name__ == '__main__':
 
     p = argparse.ArgumentParser(
             formatter_class=argparse.RawTextHelpFormatter,
-            description="  This is a pure python ping, it was designed for pinging a lot of IP addresses.",
+            description='''  This is a pure-python-ping, it was designed for pinging a lot of IP addresses.
+  But pure-python-ping gets wrong latency and I can not fix it. So I set Linux
+  ping as default, and pure-python-ping can be enabled with --pythonping. 
+''',
             epilog='''
 
 Log format:
 
-    yyyy-mm-dd HH:MM:SS, ip, pkt_sent, pkt_recv, loss, rtt_min, rtt_avg, rtt_max, bind_addr/interface
+  yyyy-mm-dd HH:MM:SS, ip, pkt_sent, pkt_recv, loss, rtt_min, rtt_avg, rtt_max, bind_addr/interface
 
 
 Example:
 
-    %s --ip 192.168.0.1,192.168.0.2
-    %s --ipfile ip.test --datadir /tmp/test/ --interval 0.1 --timeout 5
-
-                   ''' % (sys.argv[0], sys.argv[0])
+  %s --ip 192.168.0.1,192.168.0.2
+  %s --ipfile ip.test --datadir /tmp/test/ --interval 0.1 --timeout 5
+  ''' % (sys.argv[0], sys.argv[0])
         )
 
     p.add_argument("--bind",        type=str,   default="",     help="Source IP address or Interface of Linux ping command.")
@@ -410,13 +411,13 @@ Example:
     p.add_argument("--interval",    type=float, default=0.2,    help="Same to -i of ping, accepts 0 to 60, default is 0.2s, less than 0.2 needs root privilege.")
     p.add_argument("--ip",          type=str,                   help="Destination IP list.")
     p.add_argument("--ipfile",      type=str,                   help="Destination IP list file.")
-    p.add_argument("--rawping",     action="store_true",        help="Use python raw ping instead of Linux ping.")
+    p.add_argument("--log",         type=str,   default="",     help="Log file, default is not set, then log to stdout.")
+    p.add_argument("--loglevel",    type=int,   default=20,     help="Log level, could be 50(critical), 40(error), 30(warning), 20(info) and 10(debug), default is 20.")
+    p.add_argument("--max",         type=int,   default=1000,   help="The maximum threads/processes could be spread each time, default is 1000.")
+    p.add_argument("--pythonping",  action="store_true",        help="Use pure python ping instead of Linux ping, default is Linux ping.")
     p.add_argument("--shelloutput", action="store_true",        help="Use Linux ping output style instead of csv.")
     p.add_argument("--silence",     action="store_true",        help="Silence mode.")
-    p.add_argument("--max",         type=int,   default=1000,   help="The maximum threads/processes could be spread each time, default is 1000")
-    p.add_argument("--timeout",     type=int,   default=1,      help="Timeout of each thread, accepts 1 to 60, default is 1s")
-    p.add_argument("--log",         type=str,   default="",     help="Log file, default is not set, then log to stdout")
-    p.add_argument("--loglevel",    type=int,   default=20,     help="Log level, could be 50(critical), 40(error), 30(warning), 20(info) and 10(debug), default is 20")
+    p.add_argument("--timeout",     type=float, default=1,      help="Timeout of each thread, accepts 0.01 to 60s, default is 1s.")
     args = p.parse_args()
 
     logging.basicConfig(level=args.loglevel,
@@ -451,18 +452,18 @@ Example:
         args.interval = 0.2
  
     # timeout
-    if args.timeout < 0 or args.timeout > 60:
+    if args.timeout < 0.01 or args.timeout > 60:
         args.timeout = 1
 
     # gevent
     list_gevent = list()
     list_gevent.append(gevent.spawn(boss, ip_list))
-    for i in xrange(0, args.max):
-        try:
-            list_gevent.append(gevent.spawn(worker, args.count, args.interval, args.timeout, args.bind, args.datadir, args.silence, args.shelloutput, args.rawping))
-            gevent.joinall(list_gevent, timeout=args.timeout)
-        except:
-            print('')
+    try:
+        for i in xrange(0, args.max):
+            list_gevent.append(gevent.spawn(worker, args.count, args.interval, args.timeout, args.bind, args.datadir, args.silence, args.shelloutput, args.pythonping))
+            gevent.joinall(list_gevent)
+    except:
+        print('')
 
     # exit
     sys.exit()
