@@ -14,37 +14,39 @@ Help
 
     [root@TEST w-ping]# ./w-ping.py
 
-    usage: w-ping.py [-h] [--src SRC] [--ip IP] [--ipfile IPFILE]
-                     [--datadir DATADIR] [--count COUNT] [--interval INTERVAL]
-                     [--timeout TIMEOUT] [--max MAX] [--shellping] [--silent]
-                     [--process]
-    
-      This is a pure python ping, it was designed for pinging a lot of IP addresses.
-    
-    optional arguments:
-      -h, --help           show this help message and exit
-      --src SRC            Source name of ping, is hostname mostly, default is n/a.
-      --ip IP              Destination IP list to ping.
-      --ipfile IPFILE      Destination IP list file to ping.
-      --datadir DATADIR    Where the ping result to be stored, default is current directory.
-                           Example:
-                           /var/log/w-ping/$(date "+%Y")/$(date "+%Y%m%d")/
-      --count COUNT        Same to -c of ping, accepts 0 to 1000, default is 1.
-      --interval INTERVAL  Same to -i of ping, accepts 0 to 60, default is 0.01.
-      --timeout TIMEOUT    Time to wait for ping executing, default is 1 seconds.
-      --max MAX            The maximum threads/processes could be spread each time, default is 1000.
-      --shellping          Use traditional shell ping output instead of csv output.
-      --silent             Silence mode.
-      --process            Use multi-process instead of multi-thread.
-    
-    Log format:
-    
-        yyyy-mm-dd HH:MM:SS, ip, pkt_sent, pkt_recv, loss, rtt_min, rtt_avg, rtt_max, src
-    
-    Example:
-    
-        w-ping.py --ip 192.168.0.1
-        w-ping.py --ipfile ./ip.test --datadir /tmp/test --interval 0 --timeout 0.1
+        usage: w-ping.py [-h] [--bind BIND] [--count COUNT] [--datadir DATADIR]
+                         [--interval INTERVAL] [--ip IP] [--ipfile IPFILE] [--rawping]
+                         [--shelloutput] [--silence] [--max MAX] [--timeout TIMEOUT]
+                         [--log LOG] [--loglevel LOGLEVEL]
+        
+          This is a pure python ping, it was designed for pinging a lot of IP addresses.
+        
+        optional arguments:
+          -h, --help           show this help message and exit
+          --bind BIND          Source IP address or Interface of Linux ping command.
+          --count COUNT        Same to -c of ping, accepts 0 to 1000, default is 1.
+          --datadir DATADIR    Where the ping result to be stored, default is current directory.
+                               Example:
+                               /var/log/w-ping/$(date "+%Y")/$(date "+%Y%m%d")/
+          --interval INTERVAL  Same to -i of ping, accepts 0 to 60, default is 0.2s, less than 0.2 needs root privilege.
+          --ip IP              Destination IP list.
+          --ipfile IPFILE      Destination IP list file.
+          --rawping            Use python raw ping instead of Linux ping.
+          --shelloutput        Use Linux ping output style instead of csv.
+          --silence            Silence mode.
+          --max MAX            The maximum threads/processes could be spread each time, default is 1000
+          --timeout TIMEOUT    Timeout of each thread, accepts 1 to 60, default is 1s
+          --log LOG            Log file, default is not set, then log to stdout
+          --loglevel LOGLEVEL  Log level, could be 50(critical), 40(error), 30(warning), 20(info) and 10(debug), default is 20
+        
+        Log format:
+        
+            yyyy-mm-dd HH:MM:SS, ip, pkt_sent, pkt_recv, loss, rtt_min, rtt_avg, rtt_max, bind_addr/interface
+        
+        Example:
+        
+            /nms/bin/w-ping.py --ip 192.168.0.1,192.168.0.2
+            /nms/bin/w-ping.py --ipfile ip.test --datadir /tmp/test/ --interval 0.1 --timeout 5
     
     
     [root@TEST w-ping]#
@@ -57,10 +59,10 @@ These are some examples for different options:
 
     [root@TEST w-ping]#
     [root@TEST w-ping]# ./w-ping.py --ip 192.168.0.1
-    2015-11-28 15:50:42, 192.168.0.1, 1, 1, 0.00%, 3.178, 3.178, 3.178, n/a
+    2015-11-28 15:50:42, 192.168.0.1, 1, 1, 0.00%, 3.178, 3.178, 3.178, 
     [root@TEST w-ping]#
     [root@TEST w-ping]# ./w-ping.py --ip 192.168.0.1 --count 10
-    2015-11-28 15:50:45, 192.168.0.1, 10, 10, 0.00%, 2.667, 5.880, 21.524, n/a
+    2015-11-28 15:50:45, 192.168.0.1, 10, 10, 0.00%, 2.667, 5.880, 21.524,
     [root@TEST w-ping]#
     [root@TEST w-ping]#
     [root@TEST w-ping]# ./w-ping.py --ip 192.168.0.1 --shellping
@@ -72,7 +74,7 @@ These are some examples for different options:
     rtt min/avg/max/mdev = 2.704/2.704/2.704/0.000 ms
 
     [root@TEST w-ping]#
-    [root@TEST w-ping]# ./w-ping.py --ip 192.168.0.1 --shellping --count 10
+    [root@TEST w-ping]# ./w-ping.py --ip 192.168.0.1 --shelloutput --count 10
 
     ping 192.168.0.1: icmp_seq=0 time=3.0239 ms
     ping 192.168.0.1: icmp_seq=1 time=2.6319 ms
@@ -91,7 +93,7 @@ These are some examples for different options:
 
     [root@TEST w-ping]#
     [root@TEST w-ping]#
-    [root@TEST w-ping]# time ./w-ping.py --ip 192.168.0.1 --shellping --count 10 --interval 0.5
+    [root@TEST w-ping]# time ./w-ping.py --ip 192.168.0.1 --shelloutput --count 10 --interval 0.5
 
     ping 192.168.0.1: icmp_seq=0 time=2.7971 ms
     ping 192.168.0.1: icmp_seq=1 time=2.9240 ms
