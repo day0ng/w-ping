@@ -13,6 +13,11 @@
 
     Revision history
     ~~~~~~~~~~~~~~~~
+    2016/09/15
+    Dayong Wang
+    Add Linux ping as default detector instead of python raw-ping, 
+    and python raw-ping could be enabled with --rawping option.
+
     2016/09/13
     Dayong Wang
     Fix Exception KeyError by moving monkey.patch_all() on the top of import.
@@ -46,6 +51,7 @@ monkey.patch_all()
 import argparse
 import logging
 import os
+import platform
 import re
 import select
 import socket
@@ -219,7 +225,7 @@ def verbose_ping(dest_addr, timeout = 2, count = 4):
     logging.info('')
 
 
-def w_verbose_ping(dest_addr, count = 1, interval = 0.01, timeout = 1, shell_ping = False, silence = False):
+def w_verbose_ping(dest_addr, count=1, interval=0.2, timeout=1, shell_output=False, silence=False):
 
     now = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
     cmd_out  = ''
@@ -264,7 +270,7 @@ rtt min/avg/max/mdev = %0.3f/%0.3f/%0.3f/0.000 ms
         now, dest_addr, 
         pkt_sent, pkt_recv, loss, rtt_sum,
         rtt_min, rtt_avg, rtt_max)
-        if shell_ping:
+        if shell_output:
             return cmd_out
         else:
             return "%s, %s, %s, %s, %0.2f%%, %0.3f, %0.3f, %0.3f" % \
@@ -273,29 +279,71 @@ rtt min/avg/max/mdev = %0.3f/%0.3f/%0.3f/0.000 ms
         return ''
 
 
-def w_ping(dst_ip, ping_count=1, ping_interval=0.01, ping_timeout=1, datadir=".", silent=False, shell_ping=False, ping_src="n/a"):
+def w_shell_ping(dest_addr, count=1, interval=0.2, timeout=1, shell_output=False, silence=False, bind=''):
+
+    now = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+    pkt_loss = ''
+    pkt_all  = ''
+    pkt_rcv  = ''
+    rtt_min  = ''
+    rtt_avg  = ''
+    rtt_max  = ''
+    rtt_mdev = ''
+    cmd_out  = ''
+    if bind != '':
+        bind = '-I %s' % bind
+    ping_cmd = 'ping -c %s -i %s -W %s %s %s' % (count, interval, timeout, bind, dest_addr)
+    logging.debug(ping_cmd)
+    if platform.system() == 'Darwin':
+        ping_cmd = re.sub(' -W [\d+.]', '', ping_cmd)
+    ping_out  = sys_cmd(ping_cmd)[0].split('\n')
+    if len(ping_out) < 2:
+        logging.error("Wrong output of ping")
+        return ''
+    if shell_output:
+        tmp_out = ''
+        for str_line in ping_out:
+            tmp_out = '%s\n%s' % (tmp_out, str_line)
+        return tmp_out
+    while len(ping_out) > 0:
+        str_line = ping_out[len(ping_out)-1]
+        if str_line.find('rtt') == 0:
+            str_line = re.sub(' .*', '', re.sub('^.*= *', '', str_line))
+            try:
+                rtt_min, rtt_avg, rtt_max, rtt_mdev = str_line.split('/')
+            except:
+                return ''
+        if str_line.find('packet loss') > 0:
+            pkt_all  = re.sub(' packets.*$',  '', str_line)
+            pkt_rcv  = re.sub(' received.*$', '', str_line)
+            pkt_rcv  = re.sub('^.*, ',        '', pkt_rcv)
+            pkt_loss = "%0.2f%%" % (100 * (float(pkt_all) - float(pkt_rcv)) / float(pkt_all))
+        if pkt_loss != '' and rtt_avg != '':
+            break
+        ping_out.pop()
+    return "%s, %s, %s, %s, %s, %s, %s, %s" % \
+           (now, dest_addr, pkt_all, pkt_rcv, pkt_loss, rtt_min, rtt_avg, rtt_max)
+
+
+def w_ping(dst_ip, ping_count=1, ping_interval=0.2, ping_timeout=1, ping_bind='', datadir=".", silence=False, shell_output=False, rawping=False):
 
     # dst_ip
     if re.search("^([0-9]{1,3}\.){3}[0-9]{1,3}$", dst_ip) == None:
         return False
-
-    # ping_count
-    if ping_count < 0 or ping_count > 1000:
-        ping_count = 1
-
     # do ping
-    cmd_out = w_verbose_ping(dst_ip, ping_count, ping_interval, ping_timeout, shell_ping)
+    if not rawping:
+        cmd_out =   w_shell_ping(dst_ip, ping_count, ping_interval, ping_timeout, shell_output, silence, ping_bind)
+    else:
+        cmd_out = w_verbose_ping(dst_ip, ping_count, ping_interval, ping_timeout, shell_output, silence)
     if cmd_out == '':
         return False
-    if not shell_ping:
-        #timestamp, dst_ip, sent, recieved, loss, min, avg, max, src_ip
-        cmd_out = "%s, %s" % (cmd_out, ping_src)
-
-    if not silent:
+    if not shell_output:
+        #timestamp, dst_ip, sent, recieved, loss, min, avg, max, bind_addr/int
+        cmd_out = "%s, %s" % (cmd_out, ping_bind)
+    if not silence:
         logging.info(cmd_out)
-
     # write to file
-    output_file  = "%s/%s" % (datadir, dst_ip)
+    output_file = "%s/%s" % (datadir, dst_ip)
     output_path = os.path.dirname(output_file)
     if not os.path.exists(output_path):
         try:
@@ -304,7 +352,6 @@ def w_ping(dst_ip, ping_count=1, ping_interval=0.01, ping_timeout=1, datadir="."
         except:
             logging.error('mkdir %s failed!' % (output_path))
             return False
- 
     try:
         f_out = open(output_file, 'a')
         f_out.write("%s\n" % (cmd_out))
@@ -312,21 +359,18 @@ def w_ping(dst_ip, ping_count=1, ping_interval=0.01, ping_timeout=1, datadir="."
     except:
         logging.error('file %s is failed to write.' % (output_file))
         return False
-
     return True
 
 
-
-def worker(ping_count, ping_interval, ping_timeout, datadir, silent, shell_ping, ping_src):
+def worker(ping_count, ping_interval, ping_timeout, ping_bind, datadir, silence, shell_output, rawping):
     try:
         while True:
             ip = tasks.get(timeout=1)
-            w_ping(ip, ping_count, ping_interval, ping_timeout, datadir, silent, shell_ping, ping_src)
+            w_ping(ip, ping_count, ping_interval, ping_timeout, ping_bind, datadir, silence, shell_output, rawping)
             gevent.sleep(0)
     except Empty:
         logging.debug("Queue is empty!")
         pass
-
 
 
 def boss(ip_list):
@@ -346,32 +390,33 @@ if __name__ == '__main__':
 
 Log format:
 
-    yyyy-mm-dd HH:MM:SS, ip, pkt_sent, pkt_recv, loss, rtt_min, rtt_avg, rtt_max, src
+    yyyy-mm-dd HH:MM:SS, ip, pkt_sent, pkt_recv, loss, rtt_min, rtt_avg, rtt_max, bind_addr/interface
 
 
 Example:
 
-    %s --ip 192.168.0.1
-    %s --ipfile ./ip.test --datadir /tmp/test --interval 0 --timeout 0.1
+    %s --ip 192.168.0.1,192.168.0.2
+    %s --ipfile ip.test --datadir /tmp/test/ --interval 0.1 --timeout 5
 
                    ''' % (sys.argv[0], sys.argv[0])
         )
 
-    p.add_argument("--src",       type=str,   default="n/a", help="Source name of ping, is hostname mostly, default is n/a.")
-    p.add_argument("--ip",        type=str,                  help="Destination IP list to ping.")
-    p.add_argument("--ipfile",    type=str,                  help="Destination IP list file to ping.")
-    p.add_argument("--datadir",   type=str,   default=".",   help='''Where the ping result to be stored, default is current directory. 
+    p.add_argument("--bind",        type=str,   default="",     help="Source IP address or Interface of Linux ping command.")
+    p.add_argument("--count",       type=int,   default=1,      help="Same to -c of ping, accepts 0 to 1000, default is 1.")
+    p.add_argument("--datadir",     type=str,   default=".",    help='''Where the ping result to be stored, default is current directory. 
 Example:
 /var/log/w-ping/$(date "+%%Y")/$(date "+%%Y%%m%%d")/
 ''')
-    p.add_argument("--count",     type=int,   default=1,     help="Same to -c of ping, accepts 0 to 1000, default is 1.")
-    p.add_argument("--interval",  type=float, default=0.01,  help="Same to -i of ping, accepts 0 to 60, default is 0.01.")
-    p.add_argument("--shellping", action="store_true",       help="Use traditional shell ping output instead of csv output.")
-    p.add_argument("--silent",    action="store_true",       help="Silence mode.")
-    p.add_argument("--max",       type=int, default=1000,    help="The maximum threads/processes could be spread each time, default is 1000")
-    p.add_argument("--timeout",   type=int, default=60,      help="Timeout of each thread, default is 60s")
-    p.add_argument("--log",       type=str, default="",      help="Log file, default is not set, then log to stdout")
-    p.add_argument("--loglevel",  type=int, default=20,      help="Log level, could be 50(critical), 40(error), 30(warning), 20(info) and 10(debug), default is 20")
+    p.add_argument("--interval",    type=float, default=0.2,    help="Same to -i of ping, accepts 0 to 60, default is 0.2s, less than 0.2 needs root privilege.")
+    p.add_argument("--ip",          type=str,                   help="Destination IP list.")
+    p.add_argument("--ipfile",      type=str,                   help="Destination IP list file.")
+    p.add_argument("--rawping",     action="store_true",        help="Use python raw ping instead of Linux ping.")
+    p.add_argument("--shelloutput", action="store_true",        help="Use Linux ping output style instead of csv.")
+    p.add_argument("--silence",     action="store_true",        help="Silence mode.")
+    p.add_argument("--max",         type=int,   default=1000,   help="The maximum threads/processes could be spread each time, default is 1000")
+    p.add_argument("--timeout",     type=int,   default=1,      help="Timeout of each thread, accepts 1 to 60, default is 1s")
+    p.add_argument("--log",         type=str,   default="",     help="Log file, default is not set, then log to stdout")
+    p.add_argument("--loglevel",    type=int,   default=20,     help="Log level, could be 50(critical), 40(error), 30(warning), 20(info) and 10(debug), default is 20")
     args = p.parse_args()
 
     logging.basicConfig(level=args.loglevel,
@@ -397,12 +442,27 @@ Example:
         p.print_help()
         sys.exit()
 
+    # count
+    if args.count < 0 or args.count > 1000:
+        args.count = 1
+ 
+    # interval
+    if args.interval < 0 or args.interval > 60:
+        args.interval = 0.2
+ 
+    # timeout
+    if args.timeout < 0 or args.timeout > 60:
+        args.timeout = 1
+
     # gevent
     list_gevent = list()
     list_gevent.append(gevent.spawn(boss, ip_list))
     for i in xrange(0, args.max):
-        list_gevent.append(gevent.spawn(worker, args.count, args.interval, args.timeout, args.datadir, args.silent, args.shellping, args.src))
-    gevent.joinall(list_gevent, timeout=args.timeout)
+        try:
+            list_gevent.append(gevent.spawn(worker, args.count, args.interval, args.timeout, args.bind, args.datadir, args.silence, args.shelloutput, args.rawping))
+            gevent.joinall(list_gevent, timeout=args.timeout)
+        except:
+            print('')
 
     # exit
     sys.exit()
