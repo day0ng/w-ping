@@ -41,7 +41,6 @@ optional arguments:
   --ipfile IPFILE      Destination IP list file.
   --log LOG            Log file, default is not set, then log to stdout.
   --loglevel LOGLEVEL  Log level, could be 50(critical), 40(error), 30(warning), 20(info) and 10(debug), default is 20.
-  --max MAX            The maximum threads/processes could be spread each time, default is 1000.
   --pythonping         Use pure python ping instead of Linux ping, default is Linux ping.
   --shelloutput        Use Linux ping output style instead of csv.
   --silence            Silence mode.
@@ -53,7 +52,7 @@ Log format:
 
 Example:
 
-  /nms/bin/w-ping.py --ip 192.168.0.1,192.168.0.2
+  /nms/bin/w-ping.py --ip 192.168.0.6,192.168.0.2
   /nms/bin/w-ping.py --ipfile ip.test --datadir /tmp/test/ --interval 0.1 --timeout 5
 
 [root@TEST w-ping]#
@@ -67,115 +66,62 @@ These are some examples for different options:
 
 ```shell
 [root@TEST w-ping]#
-[root@TEST w-ping]# ./w-ping.py --ip 192.168.0.1
-2015-11-28 15:50:42, 192.168.0.1, 1, 1, 0.00%, 3.178, 3.178, 3.178, 
+[root@TEST w-ping]# ./w-ping.py --ip 192.168.0.6
+2016-09-16 09:31:09 [INFO] [w-ping.py, line:343] 2016-09-16 09:31:09, 192.168.0.6, 1, 1, 0.00%, 1.749, 1.749, 1.749,
 [root@TEST w-ping]#
-[root@TEST w-ping]# ./w-ping.py --ip 192.168.0.1 --count 10
-2015-11-28 15:50:45, 192.168.0.1, 10, 10, 0.00%, 2.667, 5.880, 21.524,
+[root@TEST w-ping]# ./w-ping.py --ip 192.168.0.6 --count 5
+2016-09-16 09:32:01 [INFO] [w-ping.py, line:343] 2016-09-16 09:32:00, 192.168.0.6, 5, 5, 0.00%, 1.453, 1.587, 1.822,
 [root@TEST w-ping]#
-[root@TEST w-ping]#
-[root@TEST w-ping]# ./w-ping.py --ip 192.168.0.1 --shellping
+[root@TEST w-ping]# ./w-ping.py --ip 192.168.0.6 --shelloutput
+2016-09-16 09:32:31 [INFO] [w-ping.py, line:343]
+PING 192.168.0.6 (192.168.0.6) 56(84) bytes of data.
+64 bytes from 192.168.0.6: icmp_seq=1 ttl=252 time=1.61 ms
 
-ping 192.168.0.1: icmp_seq=0 time=2.7039 ms
-
---- [2015-11-28 15:50:48] 192.168.0.1 ping statistics ---
-1 packets transmitted, 1 received, 0.00% packet loss, time 2.704ms
-rtt min/avg/max/mdev = 2.704/2.704/2.704/0.000 ms
-
-[root@TEST w-ping]#
-[root@TEST w-ping]# ./w-ping.py --ip 192.168.0.1 --shelloutput --count 10
-
-ping 192.168.0.1: icmp_seq=0 time=3.0239 ms
-ping 192.168.0.1: icmp_seq=1 time=2.6319 ms
-ping 192.168.0.1: icmp_seq=2 time=3.6349 ms
-ping 192.168.0.1: icmp_seq=3 time=2.7049 ms
-ping 192.168.0.1: icmp_seq=4 time=2.8689 ms
-ping 192.168.0.1: icmp_seq=5 time=2.8410 ms
-ping 192.168.0.1: icmp_seq=6 time=2.9349 ms
-ping 192.168.0.1: icmp_seq=7 time=2.7881 ms
-ping 192.168.0.1: icmp_seq=8 time=2.9690 ms
-ping 192.168.0.1: icmp_seq=9 time=2.9330 ms
-
---- [2015-11-28 15:51:33] 192.168.0.1 ping statistics ---
-10 packets transmitted, 10 received, 0.00% packet loss, time 29.330ms
-rtt min/avg/max/mdev = 2.632/2.933/3.635/0.000 ms
+--- 192.168.0.6 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 1ms
+rtt min/avg/max/mdev = 1.615/1.615/1.615/0.000 ms
 
 [root@TEST w-ping]#
-[root@TEST w-ping]#
-[root@TEST w-ping]# time ./w-ping.py --ip 192.168.0.1 --shelloutput --count 10 --interval 0.5
+[root@TEST w-ping]# ./w-ping.py --ip 192.168.0.6 --shelloutput --count 5
+2016-09-16 09:33:13 [INFO] [w-ping.py, line:343]
+PING 192.168.0.6 (192.168.0.6) 56(84) bytes of data.
+64 bytes from 192.168.0.6: icmp_seq=1 ttl=252 time=1.94 ms
+64 bytes from 192.168.0.6: icmp_seq=2 ttl=252 time=1.90 ms
+64 bytes from 192.168.0.6: icmp_seq=3 ttl=252 time=1.97 ms
+64 bytes from 192.168.0.6: icmp_seq=4 ttl=252 time=1.47 ms
+64 bytes from 192.168.0.6: icmp_seq=5 ttl=252 time=1.51 ms
 
-ping 192.168.0.1: icmp_seq=0 time=2.7971 ms
-ping 192.168.0.1: icmp_seq=1 time=2.9240 ms
-ping 192.168.0.1: icmp_seq=2 time=2.7552 ms
-ping 192.168.0.1: icmp_seq=3 time=3.2270 ms
-ping 192.168.0.1: icmp_seq=4 time=2.8849 ms
-ping 192.168.0.1: icmp_seq=5 time=4.6968 ms
-ping 192.168.0.1: icmp_seq=6 time=2.7409 ms
-ping 192.168.0.1: icmp_seq=7 time=3.3519 ms
-ping 192.168.0.1: icmp_seq=8 time=2.7380 ms
-ping 192.168.0.1: icmp_seq=9 time=3.2411 ms
+--- 192.168.0.6 ping statistics ---
+5 packets transmitted, 5 received, 0% packet loss, time 804ms
+rtt min/avg/max/mdev = 1.470/1.762/1.972/0.225 ms
 
---- [2015-11-28 16:03:40] 192.168.0.1 ping statistics ---
-10 packets transmitted, 10 received, 0.00% packet loss, time 31.357ms
-rtt min/avg/max/mdev = 2.738/3.136/4.697/0.000 ms
-
-
-real    0m5.083s
-user    0m0.037s
-sys     0m0.012s
-[root@TEST w-ping]#
-[root@TEST w-ping]#
-[root@TEST w-ping]#
-[root@TEST w-ping]#
-[root@TEST w-ping]# ls -lh
-total 148K
--rw-r--r-- 1 root root 130K Nov 28 14:14 ip
--rwxr-xr-x 1 root root  15K Nov 28 15:58 w-ping.py
-[root@TEST w-ping]#
-[root@TEST w-ping]# tail ip
-10.168.184.39
-10.168.184.40
-10.168.185.11
-10.168.185.12
-10.168.185.13
-10.168.185.14
-10.168.185.15
-10.168.185.16
-10.168.185.17
-10.168.185.18
 [root@TEST w-ping]#
 [root@TEST w-ping]# cat ip |wc -l
-10000
+1000
+[root@TEST w-ping]#
+[root@TEST w-ping]# tail ip
+10.168.212.58
+10.168.212.60
+10.168.212.70
+10.168.212.72
+10.168.212.74
+10.168.212.76
+10.168.212.80
+10.168.212.84
+10.168.212.85
+10.168.212.88
 [root@TEST w-ping]#
 [root@TEST w-ping]# time ./w-ping.py --ipfile ip --datadir ./test
-
-real    0m10.995s
-user    0m7.926s
-sys     0m6.592s
-[root@TEST w-ping]#
-[root@TEST w-ping]#
-[root@TEST w-ping]# ls -lh
-total 424K
--rw-r--r-- 1 root root 130K Nov 28 14:14 ip
-drwxr-xr-x 2 root root 276K Nov 28 15:59 test
--rwxr-xr-x 1 root root  15K Nov 28 15:58 w-ping.py
-[root@TEST w-ping]#
+real	0m10.226s
+user	0m2.464s
+sys	    0m4.172s
 [root@TEST w-ping]#
 [root@TEST w-ping]# ls test/ |wc -l
-9870
+1000
 [root@TEST w-ping]#
-[root@TEST w-ping]# ls test/ |sort > fail
+[root@TEST w-ping]# [root@CT_YF-NMS-2 140.12]# tail test/10.168.212.88
+2016-09-16 22:43:18, 10.168.212.88, 1, 1, 0.00%, 1.214, 1.214, 1.214,
 [root@TEST w-ping]#
-[root@TEST w-ping]# diff ip fail |head
-871,1000d870
-< 10.0.2.232
-< 10.0.2.233
-< 10.0.2.234
-< 10.0.2.235
-< 10.0.2.236
-< 10.0.2.237
-< 10.0.2.238
-< 10.0.2.239
-< 10.0.2.24
-[root@TEST w-ping]
+[root@TEST w-ping]#
 ```
+
