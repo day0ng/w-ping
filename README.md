@@ -6,7 +6,7 @@ This is a pure python ping, and it's light and simple. The original code of pyth
 
 2016-09-15:
 
-There's something wrong with raw-python-ping. It gets wrong latency, and I can not fix it. So I set Linux ping as default instead of pure-python-ping. The pure-python-ping can be enabled with --pythonping.
+There's something wrong with pure-python-ping. It gets wrong latency, and I can not fix it. So I set Linux ping as default instead of pure-python-ping. The pure-python-ping can be enabled with --pythonping.
 
 
 
