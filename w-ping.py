@@ -13,6 +13,10 @@
 
     Revision history
     ~~~~~~~~~~~~~~~~
+    2016/11/02
+    Dayong Wang
+    Bug fix, it was not multi-thread ping actually.
+
     2016/09/16
     Dayong Wang
     Add Linux ping as default detector instead of pure-python-ping. 
@@ -413,7 +417,7 @@ Example:
     p.add_argument("--ipfile",      type=str,                   help="Destination IP list file.")
     p.add_argument("--log",         type=str,   default="",     help="Log file, default is not set, then log to stdout.")
     p.add_argument("--loglevel",    type=int,   default=20,     help="Log level, could be 50(critical), 40(error), 30(warning), 20(info) and 10(debug), default is 20.")
-    #p.add_argument("--max",         type=int,   default=1000,   help="The maximum threads/processes could be spread each time, default is 1000.")
+    p.add_argument("--max",         type=int,   default=1000,   help="The maximum threads/processes could be spread each time, default is 1000.")
     p.add_argument("--pythonping",  action="store_true",        help="Use pure python ping instead of Linux ping, default is Linux ping.")
     p.add_argument("--shelloutput", action="store_true",        help="Use Linux ping output style instead of csv.")
     p.add_argument("--silence",     action="store_true",        help="Silence mode.")
@@ -460,7 +464,8 @@ Example:
     try:
         list_gevent = list()
         list_gevent.append(gevent.spawn(boss, ip_list))
-        list_gevent.append(gevent.spawn(worker, args.count, args.interval, args.timeout, args.bind, args.datadir, args.silence, args.shelloutput, args.pythonping))
+        for i in xrange(0, args.max):
+            list_gevent.append(gevent.spawn(worker, args.count, args.interval, args.timeout, args.bind, args.datadir, args.silence, args.shelloutput, args.pythonping))
         gevent.joinall(list_gevent)
     except:
         print('')
