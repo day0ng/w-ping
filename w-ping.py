@@ -15,7 +15,7 @@
     ~~~~~~~~~~~~~~~~
     2016/11/02
     Dayong Wang
-    Bug fix, it was not multi-thread ping actually.
+    Bug fix, low performance while multi-ping. And add short name of some options.
 
     2016/09/16
     Dayong Wang
@@ -406,22 +406,22 @@ Example:
   ''' % (sys.argv[0], sys.argv[0])
         )
 
-    p.add_argument("--bind",        type=str,   default="",     help="Source IP address or Interface of Linux ping command.")
-    p.add_argument("--count",       type=int,   default=1,      help="Same to -c of ping, accepts 0 to 1000, default is 1.")
-    p.add_argument("--datadir",     type=str,   default=".",    help='''Where the ping result to be stored, default is current directory. 
+    p.add_argument("-b", "--bind",      type=str,   default="",     help="Source IP address or Interface of Linux ping command.")
+    p.add_argument("-c", "--count",     type=int,   default=1,      help="Same to -c of ping, accepts 0 to 1000, default is 1.")
+    p.add_argument("-d", "--datadir",   type=str,   default=".",    help='''Where the ping result to be stored, default is current directory. 
 Example:
 /var/log/w-ping/$(date "+%%Y")/$(date "+%%Y%%m%%d")/
 ''')
-    p.add_argument("--interval",    type=float, default=0.2,    help="Same to -i of ping, accepts 0 to 60, default is 0.2s, less than 0.2 needs root privilege.")
-    p.add_argument("--ip",          type=str,                   help="Destination IP list.")
-    p.add_argument("--ipfile",      type=str,                   help="Destination IP list file.")
-    p.add_argument("--log",         type=str,   default="",     help="Log file, default is not set, then log to stdout.")
-    p.add_argument("--loglevel",    type=int,   default=20,     help="Log level, could be 50(critical), 40(error), 30(warning), 20(info) and 10(debug), default is 20.")
-    p.add_argument("--max",         type=int,   default=1000,   help="The maximum threads/processes could be spread each time, default is 1000.")
-    p.add_argument("--pythonping",  action="store_true",        help="Use pure python ping instead of Linux ping, default is Linux ping.")
-    p.add_argument("--shelloutput", action="store_true",        help="Use Linux ping output style instead of csv.")
-    p.add_argument("--silence",     action="store_true",        help="Silence mode.")
-    p.add_argument("--timeout",     type=float, default=1,      help="Timeout of each thread, accepts 0.01 to 60s, default is 1s.")
+    p.add_argument("-i", "--interval",  type=float, default=0.2,    help="Same to -i of ping, accepts 0 to 60, default is 0.2s, less than 0.2 needs root privilege.")
+    p.add_argument("--ip",              type=str,                   help="Destination IP list.")
+    p.add_argument("-f", "--ipfile",    type=str,                   help="Destination IP list file.")
+    p.add_argument("-l", "--log",       type=str,   default="",     help="Log file, default is not set, then log to stdout.")
+    p.add_argument("--loglevel",        type=int,   default=20,     help="Log level, could be 50(critical), 40(error), 30(warning), 20(info) and 10(debug), default is 20.")
+    p.add_argument("-m", "--max",       type=int,   default=1000,   help="The maximum threads/processes could be spread each time, default is 1000.")
+    p.add_argument("--pythonping",      action="store_true",        help="Use pure python ping instead of Linux ping, default is Linux ping.")
+    p.add_argument("--shelloutput",     action="store_true",        help="Use Linux ping output style instead of csv.")
+    p.add_argument("-s", "--silence",   action="store_true",        help="Silence mode.")
+    p.add_argument("-t", "--timeout",   type=float, default=1,      help="Timeout of each thread, accepts 0.01 to 60s, default is 1s.")
     args = p.parse_args()
 
     logging.basicConfig(level=args.loglevel,
