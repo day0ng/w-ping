@@ -404,7 +404,7 @@ Example:
   %s --ip 192.168.0.1,192.168.0.2
   %s -f ip.test -d /tmp/test/ -i 0.1 -t 5
   %s --ipfile ip.test --datadir /tmp/test/ --interval 0.1 --timeout 5
-  ''' % (sys.argv[0], sys.argv[0])
+  ''' % (sys.argv[0], sys.argv[0], sys.argv[0])
         )
 
     p.add_argument("-b", "--bind",      type=str,   default="",     help="Source IP address or Interface of Linux ping command.")
