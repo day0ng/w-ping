@@ -1,52 +1,45 @@
-# [w-ping](https://github.com/day0ng/w-ping)
+<!-- @format -->
+
+\*\*\*\*# [w-ping](https://github.com/day0ng/w-ping)
 
 This is a pure python ping, and it's light and simple. The original code of python ping is from [https://github.com/samuel/python-ping/](https://github.com/samuel/python-ping/).
 
-
-
 2016-09-15:
 
-There's something wrong with pure-python-ping. It gets wrong latency, and I can not fix it. So I set Linux ping as default instead of pure-python-ping. The pure-python-ping can be enabled with --pythonping.
-
-
+There's something wrong with pure-python-ping. It gets wrong latency, and I can not fix it. So I set Linux ping as default instead of pure-python-ping. The pure-python-ping can be enabled with --pyping.
 
 ## [Author](https://github.com/day0ng/w-ping#author)
 
 Wang Dayong (Email: [wandering_997@sina.com](mailto:wandering_997@sina.com), [Weibo: wandering997](http://weibo.com/wandering997))
 
-
-
 ## [Help](https://github.com/day0ng/w-ping#help)
 
 ```bash
 [root@TEST w-ping]# ./w-ping.py
-usage: w-ping.py [-h] [-b BIND] [-c COUNT] [-d DATADIR] [-i INTERVAL]
-                 [--ip IP] [-f IPFILE] [-l LOG] [--loglevel LOGLEVEL] [-m MAX]
-                 [--pythonping] [--shelloutput] [-s] [-t TIMEOUT]
+usage: w-ping.py [-h] [-b BIND] [-c COUNT] [-d DIR] [-i INTERVAL] [--ip IP] [-f FILE] [-l LOG] [--level LEVEL]
+                 [-m MAX] [--pyping] [--shell] [-s] [-t TIMEOUT]
 
   This is a pure-python-ping, it was designed for pinging a lot of IP addresses.
   But pure-python-ping gets wrong latency and I can not fix it. So I set Linux
-  ping as default, and pure-python-ping can be enabled with --pythonping.
+  ping as default, and pure-python-ping can be enabled with --pyping.
 
 optional arguments:
   -h, --help            show this help message and exit
   -b BIND, --bind BIND  Source IP address or Interface of Linux ping command.
   -c COUNT, --count COUNT
                         Same to -c of ping, accepts 0 to 1000, default is 1.
-  -d DATADIR, --datadir DATADIR
-                        Where the ping result to be stored, default is current directory.
+  -d DIR, --dir DIR     Default is blank, its where the ping result to be stored only when dir is specified.
                         Example:
                         /var/log/w-ping/$(date "+%Y")/$(date "+%Y%m%d")/
   -i INTERVAL, --interval INTERVAL
                         Same to -i of ping, accepts 0 to 60, default is 0.2s, less than 0.2 needs root privilege.
   --ip IP               Destination IP list.
-  -f IPFILE, --ipfile IPFILE
-                        Destination IP list file.
+  -f FILE, --file FILE  Destination IP list file.
   -l LOG, --log LOG     Log file, default is not set, then log to stdout.
-  --loglevel LOGLEVEL   Log level, could be 50(critical), 40(error), 30(warning), 20(info) and 10(debug), default is 20.
+  --level LEVEL         Log level, could be 50(critical), 40(error), 30(warning), 20(info) and 10(debug), default is 20.
   -m MAX, --max MAX     The maximum threads/processes could be spread each time, default is 1000.
-  --pythonping          Use pure python ping instead of Linux ping, default is Linux ping.
-  --shelloutput         Use Linux ping output style instead of csv.
+  --pyping              Use pure python ping instead of Linux ping, default is Linux ping.
+  --shell               Use Linux ping output style instead of csv.
   -s, --silence         Silence mode.
   -t TIMEOUT, --timeout TIMEOUT
                         Timeout of each thread, accepts 0.01 to 60s, default is 1s.
@@ -57,14 +50,12 @@ Log format:
 
 Example:
 
-  /nms/bin/w-ping.py --ip 192.168.0.1,192.168.0.2
-  /nms/bin/w-ping.py -f ip.test -d /tmp/test/ -i 0.1 -t 5
-  /nms/bin/w-ping.py --ipfile ip.test --datadir /tmp/test/ --interval 0.1 --timeout 5
+  w-ping.py --ip 192.168.0.1,192.168.0.2
+  w-ping.py -f ip.test -d /tmp/test/ -i 0.1 -t 5
+  w-ping.py --file ip.test --dir /tmp/test/ --interval 0.1 --timeout 5
 
 [root@TEST w-ping]#
 ```
-
-
 
 ## [Examples](https://github.com/day0ng/w-ping#examples)
 
@@ -78,7 +69,7 @@ These are some examples for different options:
 [root@TEST w-ping]# ./w-ping.py --ip 192.168.0.6 -c 5
 2016-09-16 09:32:01 [INFO] [w-ping.py, line:343] 2016-09-16 09:32:00, 192.168.0.6, 5, 5, 0.00%, 1.453, 1.587, 1.822,
 [root@TEST w-ping]#
-[root@TEST w-ping]# ./w-ping.py --ip 192.168.0.6 --shelloutput
+[root@TEST w-ping]# ./w-ping.py --ip 192.168.0.6 --shell
 2016-09-16 09:32:31 [INFO] [w-ping.py, line:343]
 PING 192.168.0.6 (192.168.0.6) 56(84) bytes of data.
 64 bytes from 192.168.0.6: icmp_seq=1 ttl=252 time=1.61 ms
@@ -88,7 +79,7 @@ PING 192.168.0.6 (192.168.0.6) 56(84) bytes of data.
 rtt min/avg/max/mdev = 1.615/1.615/1.615/0.000 ms
 
 [root@TEST w-ping]#
-[root@TEST w-ping]# ./w-ping.py --ip 192.168.0.6 --shelloutput -c 5
+[root@TEST w-ping]# ./w-ping.py --ip 192.168.0.6 --shell -c 5
 2016-09-16 09:33:13 [INFO] [w-ping.py, line:343]
 PING 192.168.0.6 (192.168.0.6) 56(84) bytes of data.
 64 bytes from 192.168.0.6: icmp_seq=1 ttl=252 time=1.94 ms
@@ -130,5 +121,3 @@ sys	    0m4.172s
 [root@TEST w-ping]#
 [root@TEST w-ping]#
 ```
-
-
