@@ -1,6 +1,6 @@
 <!-- @format -->
 
-## [w-ping](https://github.com/day0ng/w-ping)
+# [w-ping](https://github.com/day0ng/w-ping)
 
 This is a pure python ping, and it's light and simple. The original code of python ping is from [https://github.com/samuel/python-ping/](https://github.com/samuel/python-ping/).
 
